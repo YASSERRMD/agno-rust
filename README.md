@@ -1,19 +1,17 @@
+# agno-rust
 
-## agno-rust
+Rust-native scaffolding inspired by the [agno](https://github.com/agno-agi/agno) agent runtime. The workspace mirrors the structure of the upstream project with core libraries, runnable cookbook examples, and helper scripts.
 
-Rust-native scaffolding inspired by the [agno](https://github.com/agno-agi/agno) agent runtime. The crate focuses on the core event loop: a language model emits structured directives, the agent executes registered tools, and the transcript is fed back for the next turn.
+## Workspace layout
 
-### Features
+- `libs/agno-core`: Core library that exposes the agent loop, tool registry, transcript memory, and stub language model used for testing. Tools can optionally publish JSON argument schemas that are embedded in prompts.
+- `cookbook/echo-agent`: A small binary crate demonstrating how to wire tools and a scripted language model into an interactive agent.
+- `scripts/check.sh`: Convenience script to format the workspace and run the full test suite.
 
-- `LanguageModel` trait so any completion provider can plug in.
-- `Tool` trait with async execution and a registry for discovery.
-- `Agent` that enforces a JSON-based protocol (`respond` vs. `call_tool`).
-- In-memory transcript via `ConversationMemory`.
-
-### Quickstart
+## agno-core quickstart
 
 ```rust
-use agno_rust::{Agent, LanguageModel, StubModel, Tool, ToolRegistry};
+use agno_core::{Agent, LanguageModel, StubModel, Tool, ToolRegistry};
 use async_trait::async_trait;
 use serde_json::Value;
 
@@ -23,14 +21,14 @@ struct Echo;
 impl Tool for Echo {
     fn name(&self) -> &str { "echo" }
     fn description(&self) -> &str { "Echoes the input JSON back" }
-    async fn call(&self, input: Value) -> agno_rust::Result<Value> { Ok(input) }
+    async fn call(&self, input: Value) -> agno_core::Result<Value> { Ok(input) }
 }
 
 #[tokio::main]
-async fn main() -> agno_rust::Result<()> {
+async fn main() -> agno_core::Result<()> {
     let model = StubModel::new(vec![
-        r#"{"action":"respond","content":"Echo complete."}"#.into(),
         r#"{"action":"call_tool","name":"echo","arguments":{"text":"hi"}}"#.into(),
+        r#"{"action":"respond","content":"Echo complete."}"#.into(),
     ]);
 
     let mut tools = ToolRegistry::new();
@@ -44,5 +42,22 @@ async fn main() -> agno_rust::Result<()> {
 }
 ```
 
-The `StubModel` pops scripted JSON replies, making it easy to test tool routing without a live language model.
+## Cookbook example
 
+To run the `echo-agent` cookbook binary:
+
+```bash
+cargo run -p echo-agent
+```
+
+The script uses a stub language model to request a tool call, routes the call through the registry, and then emits a final assistant reply.
+
+## Development
+
+Run the formatter and the full test suite across all workspace members:
+
+```bash
+./scripts/check.sh
+```
+
+If your environment cannot fetch crates from crates.io, the tests may fail when Cargo tries to download dependencies. The core library tests only rely on the stub language model and the in-memory tool wiring.

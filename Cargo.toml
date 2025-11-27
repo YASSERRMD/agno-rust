@@ -1,3 +1,18 @@
+[workspace]
+members = [
+    "libs/agno-core",
+    "cookbook/echo-agent",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+authors = ["AGNO Rust Contributors"]
+license = "MIT"
+repository = "https://github.com/agno-agi/agno-rust"
+
+[workspace.dependencies]
 [package]
 name = "agno-rust"
 version = "0.1.0"
