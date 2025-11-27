@@ -23,6 +23,8 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 name = "agno-rust"
 version = "0.1.0"
 edition = "2021"
+repository = "https://github.com/YASSERRMD/agno-rust"
+homepage = "https://github.com/YASSERRMD/agno-rust"
 
 [dependencies]
 async-trait = "0.1"
