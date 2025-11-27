@@ -23,8 +23,14 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 name = "agno-rust"
 version = "0.1.0"
 edition = "2021"
+
+description = "Core library of Agno-Rust: agent loop, tool registry, and stub LM for testing"
+license = "Apache-2.0"
+readme = "README.md"
 repository = "https://github.com/YASSERRMD/agno-rust"
 homepage = "https://github.com/YASSERRMD/agno-rust"
+keywords = ["agno","agent","ai","rust","core"]
+categories = ["development-tools","algorithms"] 
 
 [dependencies]
 async-trait = "0.1"
