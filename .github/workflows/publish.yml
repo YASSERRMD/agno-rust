@@ -3,6 +3,8 @@ name: Publish to crates.io
 on:
   release:
     types: [published]
+  push:
+    branches: [ "main" ]
 
 jobs:
   publish:
