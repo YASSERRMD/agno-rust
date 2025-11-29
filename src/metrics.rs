@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
-use sysinfo::{System, SystemExt};
+use sysinfo::System;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct EvaluationReport {
