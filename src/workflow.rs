@@ -139,14 +139,9 @@ impl WorkflowNode {
                     Ok(last)
                 }
                 WorkflowNode::Parallel(steps) => {
-                    let futures = steps.iter().map(|step| {
-                        let mut ctx_clone = ctx.clone();
-                        async move { step.execute(&mut ctx_clone).await }
-                    });
-                    let results = join_all(futures).await;
                     let mut combined = Vec::new();
-                    for res in results {
-                        combined.push(res?);
+                    for step in steps {
+                        combined.push(step.execute(ctx).await?);
                     }
                     Ok(Value::Array(combined))
                 }
