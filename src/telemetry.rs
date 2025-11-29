@@ -1,5 +1,5 @@
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant, SystemTime};
+use std::time::{Duration, SystemTime};
 
 use serde::{Deserialize, Serialize};
 use tokio::time::sleep;
@@ -90,9 +90,16 @@ impl RetryPolicy {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct FallbackChain<T> {
     steps: Vec<(String, Arc<dyn Fn() -> Result<T> + Send + Sync>)>,
+}
+
+impl<T> std::fmt::Debug for FallbackChain<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let labels: Vec<&str> = self.steps.iter().map(|(label, _)| label.as_str()).collect();
+        f.debug_struct("FallbackChain").field("steps", &labels).finish()
+    }
 }
 
 impl<T> FallbackChain<T> {

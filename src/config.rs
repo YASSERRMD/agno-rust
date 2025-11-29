@@ -28,6 +28,16 @@ pub struct SecurityConfig {
     pub encryption_required: bool,
 }
 
+impl Default for SecurityConfig {
+    fn default() -> Self {
+        Self {
+            allowed_origins: Vec::new(),
+            allowed_tenants: Vec::new(),
+            encryption_required: default_encryption_required(),
+        }
+    }
+}
+
 fn default_encryption_required() -> bool {
     true
 }
@@ -40,6 +50,16 @@ pub struct TelemetryConfig {
     pub endpoint: Option<String>,
     #[serde(default = "default_retention_hours")]
     pub retention_hours: u32,
+}
+
+impl Default for TelemetryConfig {
+    fn default() -> Self {
+        Self {
+            sample_rate: default_sample_rate(),
+            endpoint: None,
+            retention_hours: default_retention_hours(),
+        }
+    }
 }
 
 fn default_sample_rate() -> f32 {
@@ -60,6 +80,17 @@ pub struct DeploymentConfig {
     pub autoscale: bool,
     #[serde(default)]
     pub container_image: Option<String>,
+}
+
+impl Default for DeploymentConfig {
+    fn default() -> Self {
+        Self {
+            replicas: default_replicas(),
+            max_concurrency: default_max_concurrency(),
+            autoscale: false,
+            container_image: None,
+        }
+    }
 }
 
 fn default_replicas() -> u16 {
