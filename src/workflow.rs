@@ -1,4 +1,5 @@
 use std::future::Future;
+use std::pin::Pin;
 use std::sync::Arc;
 
 use async_trait::async_trait;
@@ -30,34 +31,29 @@ pub trait WorkflowTask: Send + Sync {
     async fn run(&self, ctx: &mut WorkflowContext) -> Result<Value>;
 }
 
+type TaskFuture<'a> = Pin<Box<dyn Future<Output = Result<Value>> + Send + 'a>>;
+
 /// Wrap a plain async function as a workflow task.
-pub struct FunctionTask<F, Fut>
+pub struct FunctionTask<F>
 where
-    F: Send + Sync + Fn(&mut WorkflowContext) -> Fut,
-    Fut: Future<Output = Result<Value>> + Send,
+    F: for<'a> Fn(&'a mut WorkflowContext) -> TaskFuture<'a> + Send + Sync,
 {
     func: F,
-    _marker: std::marker::PhantomData<fn() -> Fut>,
 }
 
-impl<F, Fut> FunctionTask<F, Fut>
+impl<F> FunctionTask<F>
 where
-    F: Send + Sync + Fn(&mut WorkflowContext) -> Fut,
-    Fut: Future<Output = Result<Value>> + Send,
+    F: for<'a> Fn(&'a mut WorkflowContext) -> TaskFuture<'a> + Send + Sync,
 {
     pub fn new(func: F) -> Self {
-        Self {
-            func,
-            _marker: std::marker::PhantomData,
-        }
+        Self { func }
     }
 }
 
 #[async_trait]
-impl<F, Fut> WorkflowTask for FunctionTask<F, Fut>
+impl<F> WorkflowTask for FunctionTask<F>
 where
-    F: Send + Sync + Fn(&mut WorkflowContext) -> Fut,
-    Fut: Future<Output = Result<Value>> + Send,
+    F: for<'a> Fn(&'a mut WorkflowContext) -> TaskFuture<'a> + Send + Sync,
 {
     async fn run(&self, ctx: &mut WorkflowContext) -> Result<Value> {
         (self.func)(ctx).await
@@ -212,14 +208,18 @@ mod tests {
 
     #[tokio::test]
     async fn executes_sequential_and_parallel_nodes() {
-        let task_a = FunctionTask::new(|ctx: &mut WorkflowContext| async move {
-            ctx.insert("a", json!(1));
-            Ok(json!("done"))
+        let task_a = FunctionTask::new(|ctx: &mut WorkflowContext| {
+            Box::pin(async move {
+                ctx.insert("a", json!(1));
+                Ok(json!("done"))
+            })
         });
-        let task_b = FunctionTask::new(|ctx: &mut WorkflowContext| async move {
-            let current = ctx.get("a").and_then(|v| v.as_i64()).unwrap_or(0);
-            ctx.insert("b", json!(current + 1));
-            Ok(json!("b"))
+        let task_b = FunctionTask::new(|ctx: &mut WorkflowContext| {
+            Box::pin(async move {
+                let current = ctx.get("a").and_then(|v| v.as_i64()).unwrap_or(0);
+                ctx.insert("b", json!(current + 1));
+                Ok(json!("b"))
+            })
         });
 
         let flow = Workflow::new(
@@ -229,9 +229,11 @@ mod tests {
                 WorkflowNode::Parallel(vec![
                     WorkflowNode::Task(Arc::new(task_b)),
                     WorkflowNode::Task(Arc::new(FunctionTask::new(
-                        |ctx: &mut WorkflowContext| async move {
-                            ctx.insert("c", json!(true));
-                            Ok(json!("c"))
+                        |ctx: &mut WorkflowContext| {
+                            Box::pin(async move {
+                                ctx.insert("c", json!(true));
+                                Ok(json!("c"))
+                            })
                         },
                     ))),
                 ]),
@@ -249,10 +251,13 @@ mod tests {
     #[tokio::test]
     async fn executes_conditional_loop() {
         let body = WorkflowNode::Task(Arc::new(FunctionTask::new(
-            |ctx: &mut WorkflowContext| async move {
-                let next = ctx.get("count").and_then(|v| v.as_i64()).unwrap_or(0) + 1;
-                ctx.insert("count", json!(next));
-                Ok(json!(next))
+            |ctx: &mut WorkflowContext| {
+                Box::pin(async move {
+                    let next =
+                        ctx.get("count").and_then(|v| v.as_i64()).unwrap_or(0) + 1;
+                    ctx.insert("count", json!(next));
+                    Ok(json!(next))
+                })
             },
         )));
 
