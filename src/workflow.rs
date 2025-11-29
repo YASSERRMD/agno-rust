@@ -37,7 +37,7 @@ where
     Fut: Future<Output = Result<Value>> + Send,
 {
     func: F,
-    _marker: std::marker::PhantomData<Fut>,
+    _marker: std::marker::PhantomData<fn() -> Fut>,
 }
 
 impl<F, Fut> FunctionTask<F, Fut>
@@ -128,56 +128,61 @@ pub enum WorkflowNode {
 }
 
 impl WorkflowNode {
-    async fn execute(&self, ctx: &mut WorkflowContext) -> Result<Value> {
-        match self {
-            WorkflowNode::Task(task) => task.run(ctx).await,
-            WorkflowNode::Sequence(steps) => {
-                let mut last = Value::Null;
-                for step in steps {
-                    last = step.execute(ctx).await?;
-                }
-                Ok(last)
-            }
-            WorkflowNode::Parallel(steps) => {
-                let futures = steps.iter().map(|step| {
-                    let mut ctx_clone = ctx.clone();
-                    async move { step.execute(&mut ctx_clone).await }
-                });
-                let results = join_all(futures).await;
-                let mut combined = Vec::new();
-                for res in results {
-                    combined.push(res?);
-                }
-                Ok(Value::Array(combined))
-            }
-            WorkflowNode::Conditional {
-                condition,
-                then_branch,
-                else_branch,
-            } => {
-                if condition(ctx) {
-                    then_branch.execute(ctx).await
-                } else if let Some(other) = else_branch {
-                    other.execute(ctx).await
-                } else {
-                    Ok(Value::Null)
-                }
-            }
-            WorkflowNode::Loop {
-                condition,
-                body,
-                max_iterations,
-            } => {
-                let mut last = Value::Null;
-                for _ in 0..*max_iterations {
-                    if !(condition)(ctx) {
-                        break;
+    fn execute<'a>(
+        &'a self,
+        ctx: &'a mut WorkflowContext,
+    ) -> std::pin::Pin<Box<dyn Future<Output = Result<Value>> + Send + 'a>> {
+        Box::pin(async move {
+            match self {
+                WorkflowNode::Task(task) => task.run(ctx).await,
+                WorkflowNode::Sequence(steps) => {
+                    let mut last = Value::Null;
+                    for step in steps {
+                        last = step.execute(ctx).await?;
                     }
-                    last = body.execute(ctx).await?;
+                    Ok(last)
                 }
-                Ok(last)
+                WorkflowNode::Parallel(steps) => {
+                    let futures = steps.iter().map(|step| {
+                        let mut ctx_clone = ctx.clone();
+                        async move { step.execute(&mut ctx_clone).await }
+                    });
+                    let results = join_all(futures).await;
+                    let mut combined = Vec::new();
+                    for res in results {
+                        combined.push(res?);
+                    }
+                    Ok(Value::Array(combined))
+                }
+                WorkflowNode::Conditional {
+                    condition,
+                    then_branch,
+                    else_branch,
+                } => {
+                    if condition(ctx) {
+                        then_branch.execute(ctx).await
+                    } else if let Some(other) = else_branch {
+                        other.execute(ctx).await
+                    } else {
+                        Ok(Value::Null)
+                    }
+                }
+                WorkflowNode::Loop {
+                    condition,
+                    body,
+                    max_iterations,
+                } => {
+                    let mut last = Value::Null;
+                    for _ in 0..*max_iterations {
+                        if !(condition)(ctx) {
+                            break;
+                        }
+                        last = body.execute(ctx).await?;
+                    }
+                    Ok(last)
+                }
             }
-        }
+        })
     }
 }
 
