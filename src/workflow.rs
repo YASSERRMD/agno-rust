@@ -74,7 +74,7 @@ where
 }
 
 /// A single node in a workflow graph.
-pub enum WorkflowStep<M: LanguageModel> {
+pub enum WorkflowStep {
     Task(String),
     Agent {
         member: String,
@@ -85,26 +85,26 @@ pub enum WorkflowStep<M: LanguageModel> {
         key: String,
         value: serde_json::Value,
     },
-    Sequence(Vec<WorkflowStep<M>>),
-    Parallel(Vec<WorkflowStep<M>>),
+    Sequence(Vec<WorkflowStep>),
+    Parallel(Vec<WorkflowStep>),
     Conditional {
         key: String,
         equals: serde_json::Value,
-        then_branch: Box<WorkflowStep<M>>,
-        else_branch: Option<Box<WorkflowStep<M>>>,
+        then_branch: Box<WorkflowStep>,
+        else_branch: Option<Box<WorkflowStep>>,
     },
     Loop {
         key: String,
         until: serde_json::Value,
-        body: Box<WorkflowStep<M>>,
+        body: Box<WorkflowStep>,
         max_iterations: usize,
     },
 }
 
 /// A reusable workflow definition.
-pub struct Workflow<M: LanguageModel> {
+pub struct Workflow {
     pub name: String,
-    pub steps: Vec<WorkflowStep<M>>,
+    pub steps: Vec<WorkflowStep>,
 }
 
 /// Executes workflows that weave teams, tools, and functions together.
@@ -142,7 +142,7 @@ impl<M: LanguageModel> WorkflowEngine<M> {
         Arc::clone(&self.team)
     }
 
-    pub async fn run(&self, workflow: &Workflow<M>) -> Result<WorkflowContext> {
+    pub async fn run(&self, workflow: &Workflow) -> Result<WorkflowContext> {
         let ctx: WorkflowContextHandle = Arc::new(RwLock::new(WorkflowContext::default()));
         for step in &workflow.steps {
             self.execute_step(step, Arc::clone(&ctx)).await?;
@@ -151,7 +151,7 @@ impl<M: LanguageModel> WorkflowEngine<M> {
         Ok(final_ctx.clone())
     }
 
-    async fn execute_step(&self, step: &WorkflowStep<M>, ctx: WorkflowContextHandle) -> Result<()> {
+    async fn execute_step(&self, step: &WorkflowStep, ctx: WorkflowContextHandle) -> Result<()> {
         match step {
             WorkflowStep::Task(name) => {
                 let Some(task) = self.tasks.get(name) else {

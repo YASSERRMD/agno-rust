@@ -21,7 +21,7 @@ use crate::workflow::{Workflow, WorkflowContext, WorkflowEngine};
 #[derive(Clone)]
 pub struct AgentOs<M: LanguageModel> {
     engine: Arc<WorkflowEngine<M>>,
-    workflows: Arc<RwLock<HashMap<String, Workflow<M>>>>,
+    workflows: Arc<RwLock<HashMap<String, Workflow>>>,
     events: broadcast::Sender<String>,
 }
 
@@ -55,7 +55,7 @@ impl<M: LanguageModel + 'static> AgentOs<M> {
         }
     }
 
-    pub async fn register_workflow(&self, workflow: Workflow<M>) {
+    pub async fn register_workflow(&self, workflow: Workflow) {
         let mut locked = self.workflows.write().await;
         locked.insert(workflow.name.clone(), workflow);
     }
