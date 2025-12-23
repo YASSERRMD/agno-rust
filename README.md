@@ -1,4 +1,4 @@
-# agno-rust 🦀
+# agno-rust
 
 A high-performance Rust implementation of the [agno](https://github.com/agno-agi/agno) AI agent framework. Build production-ready AI agents with multi-provider LLM support, extensive toolkits, and enterprise-grade features.
 
@@ -65,7 +65,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-agno-rust = "0.2"
+agno-rust = "0.3"
 ```
 
 ## Quick Start
