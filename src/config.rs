@@ -10,7 +10,7 @@ use crate::error::{AgnoError, Result};
 pub struct ServerConfig {
     pub host: String,
     pub port: u16,
-    #[serde(default = "default_tls")] 
+    #[serde(default = "default_tls")]
     pub tls_enabled: bool,
 }
 
@@ -110,6 +110,43 @@ pub struct ModelConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum StorageBackend {
+    File,
+    Sqlite,
+}
+
+impl Default for StorageBackend {
+    fn default() -> Self {
+        StorageBackend::File
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct StorageConfig {
+    #[serde(default)]
+    pub backend: StorageBackend,
+    #[serde(default = "default_storage_path")]
+    pub file_path: String,
+    #[serde(default)]
+    pub database_url: Option<String>,
+}
+
+impl Default for StorageConfig {
+    fn default() -> Self {
+        Self {
+            backend: StorageBackend::default(),
+            file_path: default_storage_path(),
+            database_url: None,
+        }
+    }
+}
+
+fn default_storage_path() -> String {
+    "conversation.jsonl".into()
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct AppConfig {
     pub server: ServerConfig,
     #[serde(default)]
@@ -119,6 +156,8 @@ pub struct AppConfig {
     #[serde(default)]
     pub deployment: DeploymentConfig,
     pub model: ModelConfig,
+    #[serde(default)]
+    pub storage: StorageConfig,
 }
 
 impl Default for AppConfig {
@@ -150,6 +189,7 @@ impl Default for AppConfig {
                 model: "stub-model".into(),
                 api_key: None,
             },
+            storage: StorageConfig::default(),
         }
     }
 }
@@ -157,9 +197,8 @@ impl Default for AppConfig {
 impl AppConfig {
     pub fn from_file(path: impl AsRef<Path>) -> Result<Self> {
         let raw = fs::read_to_string(path)?;
-        let cfg: Self = toml::from_str(&raw).map_err(|err| {
-            AgnoError::Protocol(format!("Failed to parse configuration: {err}"))
-        })?;
+        let cfg: Self = toml::from_str(&raw)
+            .map_err(|err| AgnoError::Protocol(format!("Failed to parse configuration: {err}")))?;
         Ok(cfg)
     }
 
@@ -180,6 +219,18 @@ impl AppConfig {
             if let Ok(parsed) = sample.parse::<f32>() {
                 cfg.telemetry.sample_rate = parsed.clamp(0.01, 1.0);
             }
+        }
+        if let Ok(backend) = env::var("AGNO_STORAGE_BACKEND") {
+            cfg.storage.backend = match backend.to_ascii_lowercase().as_str() {
+                "sqlite" => StorageBackend::Sqlite,
+                _ => StorageBackend::File,
+            };
+        }
+        if let Ok(path) = env::var("AGNO_STORAGE_PATH") {
+            cfg.storage.file_path = path;
+        }
+        if let Ok(url) = env::var("AGNO_DATABASE_URL") {
+            cfg.storage.database_url = Some(url);
         }
         Ok(cfg)
     }
@@ -208,5 +259,28 @@ mod tests {
         assert_eq!(cfg.server.host, "127.0.0.1");
         assert_eq!(cfg.model.provider, "openai");
         env::remove_var("AGNO_PORT");
+    }
+
+    #[test]
+    fn overrides_storage_backend() {
+        let mut file = NamedTempFile::new().unwrap();
+        writeln!(
+            file,
+            "[server]\nhost='127.0.0.1'\nport=9000\n[model]\nprovider='openai'\nmodel='gpt-4'\n[storage]\nbackend='file'\nfile_path='transcript.jsonl'"
+        )
+        .unwrap();
+
+        env::set_var("AGNO_STORAGE_BACKEND", "sqlite");
+        env::set_var("AGNO_DATABASE_URL", "sqlite::memory:");
+        let cfg = AppConfig::from_env_or_file(file.path()).unwrap();
+
+        assert_eq!(cfg.storage.backend, StorageBackend::Sqlite);
+        assert_eq!(
+            cfg.storage.database_url,
+            Some("sqlite::memory:".to_string())
+        );
+
+        env::remove_var("AGNO_STORAGE_BACKEND");
+        env::remove_var("AGNO_DATABASE_URL");
     }
 }
