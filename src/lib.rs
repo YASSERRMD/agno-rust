@@ -26,7 +26,8 @@ mod workflow;
 
 pub use agent::{Agent, AgentDirective};
 pub use config::{
-    AppConfig, DeploymentConfig, ModelConfig, SecurityConfig, ServerConfig, TelemetryConfig,
+    AppConfig, DeploymentConfig, ModelConfig, ProviderConfig, SecurityConfig, ServerConfig,
+    TelemetryConfig,
 };
 pub use deployment::DeploymentPlan;
 pub use error::{AgnoError, Result};
@@ -36,7 +37,7 @@ pub use knowledge::{
     Document, Embedder, InMemoryVectorStore, KnowledgeBase, Retriever, ScoredDocument, VectorStore,
     WhitespaceEmbedder,
 };
-pub use llm::{LanguageModel, StubModel};
+pub use llm::{LanguageModel, ModelCompletion, StubModel};
 pub use memory::{ConversationMemory, PersistentConversationMemory};
 pub use message::{Attachment, AttachmentKind, Message, Role, ToolCall, ToolResult};
 pub use metrics::{EvaluationReport, MetricsTracker};
