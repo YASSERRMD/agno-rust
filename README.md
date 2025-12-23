@@ -65,7 +65,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-agno-rust = "0.2"
+agno-rust = "0.3"
 ```
 
 ## Quick Start
