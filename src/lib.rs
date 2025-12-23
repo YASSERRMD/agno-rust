@@ -10,6 +10,7 @@ mod config;
 mod deployment;
 mod error;
 mod governance;
+pub mod guardrails;
 mod hooks;
 mod knowledge;
 mod llm;
@@ -22,6 +23,7 @@ mod team;
 mod telemetry;
 mod tool;
 mod toolkit;
+pub mod tools;
 mod workflow;
 
 pub use agent::{Agent, AgentDirective};
