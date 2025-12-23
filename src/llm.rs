@@ -582,6 +582,23 @@ pub struct CohereClient {
 }
 
 impl CohereClient {
+    pub fn new(api_key: impl Into<String>) -> Self {
+        Self {
+            http: reqwest::Client::builder()
+                .timeout(Duration::from_secs(60))
+                .build()
+                .expect("failed to build http client"),
+            model: "command-r-plus".to_string(),
+            api_key: api_key.into(),
+            endpoint: "https://api.cohere.ai/v2/chat".to_string(),
+        }
+    }
+
+    pub fn with_model(mut self, model: impl Into<String>) -> Self {
+        self.model = model.into();
+        self
+    }
+
     pub fn from_config(cfg: &ModelConfig) -> Result<Self> {
         let api_key = cfg
             .cohere
