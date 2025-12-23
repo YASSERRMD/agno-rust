@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "libs/agno-core",
-    "cookbook/echo-agent",
+    "cookbook/echo-agent", "libs/agno-py",
 ]
 resolver = "2"
 

@@ -212,8 +212,25 @@ agno-rust/
 │   ├── knowledge/      # RAG and vector stores
 │   ├── reasoning.rs    # Chain-of-thought
 │   └── server.rs       # HTTP runtime
+├── libs/
+│   └── agno-py/        # PyO3 Python bindings
 ├── cookbook/           # Example agents
 └── scripts/            # Development utilities
+```
+
+## Python Bindings
+
+You can use the Rust implementation from Python with familiar Agno syntax:
+
+```python
+from agno import Agent, OpenAIChat
+
+agent = Agent(
+    model=OpenAIChat(id="gpt-4"),
+    description="You are a helpful assistant",
+)
+
+agent.print_response("Hello from Rust!")
 ```
 
 ## Testing
