@@ -14,3 +14,6 @@ dynamic = ["version"]
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
+# Build with minimal features for fast pip install (especially in Colab)
+# To enable AWS or telemetry, install with: pip install sayr[aws] or sayr[telemetry]
+cargo-extra-args = "--no-default-features"
