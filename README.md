@@ -9,7 +9,6 @@
   <a href="https://crates.io/crates/sayr-engine"><img src="https://img.shields.io/crates/d/sayr-engine.svg" alt="Downloads"></a>
   <a href="https://docs.rs/sayr-engine"><img src="https://docs.rs/sayr-engine/badge.svg" alt="Documentation"></a>
   <a href="https://github.com/YASSERRMD/sayr-engine/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
-  <a href="https://github.com/YASSERRMD/sayr-engine/actions"><img src="https://github.com/YASSERRMD/sayr-engine/workflows/CI/badge.svg" alt="Build Status"></a>
 </p>
 
 <p align="center">
