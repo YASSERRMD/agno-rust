@@ -1,0 +1,8 @@
+# Vendor the reference implementation
+agno-reference/** linguist-vendored
+
+# Vendor the Python bindings (optional, assumes Rust is the main focus)
+libs/sayr-py/** linguist-vendored
+
+# Ensure Docs are vendored (if any exist in future)
+docs/** linguist-vendored
