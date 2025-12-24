@@ -1,3 +1,4 @@
 /target
 agno-reference/
 target_bench/
+.env
