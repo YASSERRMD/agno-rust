@@ -1,0 +1,1 @@
+!: sqlx_core::io::Decode<'_>
